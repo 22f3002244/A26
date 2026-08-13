@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Event Ticketing Platform — Schema ER Diagrams</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f7f7f5;
+    --border: #d9d8d2;
+    --text: #2c2c2a;
+    --muted: #5f5e5a;
+    --accent: #185fa5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --card: #262624;
+      --border: #3d3d3a;
+      --text: #ece9e0;
+      --muted: #b4b2a9;
+      --accent: #85b7eb;
+    }
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  nav {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 32px; padding: 12px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  nav a {
+    font-size: 13px; color: var(--accent); text-decoration: none;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  nav a:hover { background: var(--border); }
+  section { margin-bottom: 56px; scroll-margin-top: 16px; }
+  h2 {
+    font-size: 17px; font-weight: 600; border-bottom: 1px solid var(--border);
+    padding-bottom: 8px; margin-bottom: 4px;
+  }
+  .desc { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; line-height: 1.55; }
+  .diagram-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; overflow-x: auto;
+  }
+  .diagram-card svg { max-width: none !important; }
+  footer { color: var(--muted); font-size: 12.5px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Event ticketing platform — schema ER diagrams</h1>
+  <div class="sub">47 tables, grouped into 9 functional domains. Cross-domain foreign keys are noted under each diagram since a single table (e.g. <code>users</code>, <code>organizations</code>) is referenced from many domains.</div>
+
+  <nav>
+    <a href="#identity">1. Identity</a>
+    <a href="#rbac">2. Orgs &amp; RBAC</a>
+    <a href="#venues">3. Venues &amp; gates</a>
+    <a href="#events">4. Event hierarchy</a>
+    <a href="#catalog">5. Ticket catalog &amp; passes</a>
+    <a href="#commerce">6. Holds, promos, waitlists</a>
+    <a href="#bookings">7. Bookings, tickets, transfers</a>
+    <a href="#entry">8. Gate entry verification</a>
+    <a href="#payments">9. Payments, refunds, payouts</a>
+    <a href="#support">10. Notifications &amp; audit</a>
+  </nav>
+
+  <section id="identity">
+    <h2>1. Users &amp; identity</h2>
+    <div class="desc">Core identity plus auth, devices, consent trail, and account-risk tracking. <code>data_deletion_requests.handled_by</code> points to <code>platform_admins</code> (domain 2).</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  USERS {
+    uuid id PK
+    string full_name
+    string email
+    string phone
+    boolean id_verified
+    date date_of_birth
+    boolean mfa_enabled
+  }
+  USER_DEVICES {
+    uuid id PK
+    uuid user_id FK
+    string device_fingerprint
+    boolean is_trusted
+  }
+  USER_SESSIONS {
+    uuid id PK
+    uuid user_id FK
+    uuid device_id FK
+    inet ip_address
+    timestamp expires_at
+  }
+  VERIFICATION_TOKENS {
+    uuid id PK
+    uuid user_id FK
+    string token_type
+    timestamp expires_at
+  }
+  USER_CONSENTS {
+    uuid id PK
+    uuid user_id FK
+    string consent_type
+    string policy_version
+  }
+  DATA_DELETION_REQUESTS {
+    uuid id PK
+    uuid user_id FK
+    uuid handled_by FK
+    string status
+  }
+  FRAUD_SIGNALS {
+    uuid id PK
+    uuid user_id FK
+    string signal_type
+    string severity
+  }
+
+  USERS ||--o{ USER_DEVICES : owns
+  USERS ||--o{ USER_SESSIONS : "logs in via"
+  USER_DEVICES ||--o{ USER_SESSIONS : "used by"
+  USERS ||--o{ VERIFICATION_TOKENS : requests
+  USERS ||--o{ USER_CONSENTS : accepts
+  USERS ||--o{ DATA_DELETION_REQUESTS : files
+  USERS ||--o{ FRAUD_SIGNALS : "flagged by"
+    </pre></div>
+  </section>
+
+  <section id="rbac">
+    <h2>2. Business accounts &amp; role-based access control</h2>
+    <div class="desc">An organization is a business account; members hold a role built from permissions. Roles with <code>organization_id = NULL</code> are system templates. <code>platform_admins</code> is a separate, cross-org admin layer. <code>created_by</code>, <code>invited_by</code> reference <code>users</code> (domain 1).</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  ORGANIZATIONS {
+    uuid id PK
+    string legal_name
+    string display_name
+    string kyc_status
+    uuid created_by FK
+  }
+  ORGANIZATION_BANK_ACCOUNTS {
+    uuid id PK
+    uuid organization_id FK
+    string account_number_masked
+    boolean verified
+  }
+  ORGANIZATION_FEE_PLANS {
+    uuid id PK
+    uuid organization_id FK
+    string fee_type
+    decimal fee_value
+  }
+  PERMISSIONS {
+    uuid id PK
+    string code
+    string category
+  }
+  ROLES {
+    uuid id PK
+    uuid organization_id FK "null = system template"
+    string name
+    boolean requires_mfa
+  }
+  ROLE_PERMISSIONS {
+    uuid role_id FK
+    uuid permission_id FK
+  }
+  ORGANIZATION_MEMBERS {
+    uuid id PK
+    uuid organization_id FK
+    uuid user_id FK
+    uuid role_id FK
+    string status
+  }
+  ORGANIZATION_INVITATIONS {
+    uuid id PK
+    uuid organization_id FK
+    string email
+    uuid role_id FK
+    string status
+  }
+  ORGANIZATION_MEMBER_EVENT_SCOPES {
+    uuid organization_member_id FK
+    uuid event_id FK "-> events, domain 4"
+  }
+  PLATFORM_ADMINS {
+    uuid id PK
+    uuid user_id FK
+    string role
+  }
+
+  ORGANIZATIONS ||--o{ ORGANIZATION_BANK_ACCOUNTS : has
+  ORGANIZATIONS ||--o{ ORGANIZATION_FEE_PLANS : has
+  ORGANIZATIONS ||--o{ ROLES : defines
+  ROLES ||--o{ ROLE_PERMISSIONS : grants
+  PERMISSIONS ||--o{ ROLE_PERMISSIONS : "granted via"
+  ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERS : employs
+  ROLES ||--o{ ORGANIZATION_MEMBERS : "assigned to"
+  ORGANIZATIONS ||--o{ ORGANIZATION_INVITATIONS : sends
+  ROLES ||--o{ ORGANIZATION_INVITATIONS : offers
+  ORGANIZATION_MEMBERS ||--o{ ORGANIZATION_MEMBER_EVENT_SCOPES : "scoped to"
+    </pre></div>
+  </section>
+
+  <section id="venues">
+    <h2>3. Venues, seating &amp; gates</h2>
+    <div class="desc">Physical structure of a venue plus the reverse-QR gate hardware (gate displays a rotating code; the attendee's app scans it — no static ticket QR exists).</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  VENUES {
+    uuid id PK
+    string name
+    string city
+    string timezone
+    int total_capacity
+  }
+  VENUE_SECTIONS {
+    uuid id PK
+    uuid venue_id FK
+    string section_name
+    int capacity
+  }
+  VENUE_SEATS {
+    uuid id PK
+    uuid section_id FK
+    string row_label
+    string seat_number
+  }
+  GATES {
+    uuid id PK
+    uuid venue_id FK
+    string gate_code
+    int qr_rotation_seconds
+    string qr_signing_key_id
+  }
+  GATE_QR_TOKENS {
+    uuid id PK
+    uuid gate_id FK
+    string token
+    timestamp expires_at
+  }
+
+  VENUES ||--o{ VENUE_SECTIONS : contains
+  VENUE_SECTIONS ||--o{ VENUE_SEATS : contains
+  VENUES ||--o{ GATES : has
+  GATES ||--o{ GATE_QR_TOKENS : rotates
+    </pre></div>
+  </section>
+
+  <section id="events">
+    <h2>4. Event hierarchy — event → leg → session</h2>
+    <div class="desc"><code>events.organization_id</code> references domain 2. <code>event_legs.venue_id</code> and <code>session_gates.gate_id</code> reference domain 3.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  EVENTS {
+    uuid id PK
+    uuid organization_id FK "-> organizations, domain 2"
+    string title
+    string status
+  }
+  EVENT_LEGS {
+    uuid id PK
+    uuid event_id FK
+    uuid venue_id FK "-> venues, domain 3"
+    string leg_name
+    string currency
+  }
+  SESSIONS {
+    uuid id PK
+    uuid event_leg_id FK
+    date session_date
+    timestamp start_time
+    smallint min_age
+  }
+  SESSION_GATES {
+    uuid id PK
+    uuid session_id FK
+    uuid gate_id FK "-> gates, domain 3"
+    timestamp opens_at
+    timestamp closes_at
+  }
+  EVENT_CHANGES {
+    uuid id PK
+    uuid event_id FK
+    uuid session_id FK
+    string change_type
+    boolean is_material
+  }
+
+  EVENTS ||--o{ EVENT_LEGS : "runs as"
+  EVENT_LEGS ||--o{ SESSIONS : schedules
+  SESSIONS ||--o{ SESSION_GATES : opens
+  EVENTS ||--o{ EVENT_CHANGES : logs
+  SESSIONS ||--o{ EVENT_CHANGES : logs
+    </pre></div>
+  </section>
+
+  <section id="catalog">
+    <h2>5. Ticket categories, pricing phases &amp; passes</h2>
+    <div class="desc">A category is defined once per event; availability, capacity and seating are set per session via <code>session_ticket_categories</code>. Passes bundle multiple sessions. <code>event_id</code> and <code>session_id</code> reference domain 4.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  TICKET_CATEGORIES {
+    uuid id PK
+    uuid event_id FK "-> events, domain 4"
+    string name
+    string entry_verification_mode
+    string resale_policy
+  }
+  SESSION_TICKET_CATEGORIES {
+    uuid id PK
+    uuid session_id FK "-> sessions, domain 4"
+    uuid ticket_category_id FK
+    uuid venue_section_id FK "-> venue_sections, domain 3"
+    int quantity_total
+    int quantity_sold
+    int quantity_held
+  }
+  PRICING_PHASES {
+    uuid id PK
+    uuid session_ticket_category_id FK
+    string phase_name
+    decimal price
+    timestamp starts_at
+    timestamp ends_at
+  }
+  PASSES {
+    uuid id PK
+    uuid event_id FK "-> events, domain 4"
+    string name
+    decimal price
+    int quantity_total
+  }
+  PASS_SESSIONS {
+    uuid pass_id FK
+    uuid session_id FK "-> sessions, domain 4"
+  }
+
+  TICKET_CATEGORIES ||--o{ SESSION_TICKET_CATEGORIES : "offered as"
+  SESSION_TICKET_CATEGORIES ||--o{ PRICING_PHASES : "priced in"
+  PASSES ||--o{ PASS_SESSIONS : "grants access to"
+    </pre></div>
+  </section>
+
+  <section id="commerce">
+    <h2>6. Inventory holds, promo codes &amp; waitlists</h2>
+    <div class="desc">Holds prevent overselling during checkout; promo redemptions and waitlist entries reference <code>users</code> (domain 1) and <code>session_ticket_categories</code> (domain 5). <code>promo_code_redemptions.booking_id</code> references domain 7.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  INVENTORY_HOLDS {
+    uuid id PK
+    uuid session_ticket_category_id FK "-> domain 5"
+    uuid user_id FK "-> users, domain 1"
+    int quantity
+    string status
+    timestamp expires_at
+  }
+  PROMO_CODES {
+    uuid id PK
+    uuid event_id FK "-> events, domain 4"
+    string code
+    string discount_type
+    decimal discount_value
+  }
+  PROMO_CODE_REDEMPTIONS {
+    uuid id PK
+    uuid promo_code_id FK
+    uuid user_id FK "-> users, domain 1"
+    uuid booking_id FK "-> bookings, domain 7"
+  }
+  WAITLISTS {
+    uuid id PK
+    uuid session_ticket_category_id FK "-> domain 5"
+    uuid user_id FK "-> users, domain 1"
+    string status
+  }
+
+  PROMO_CODES ||--o{ PROMO_CODE_REDEMPTIONS : redeemed
+    </pre></div>
+  </section>
+
+  <section id="bookings">
+    <h2>7. Bookings, tickets &amp; transfers</h2>
+    <div class="desc">A booking is either session-based or pass-based. Each ticket belongs to one concrete session even when purchased via a pass. <code>refund_policies</code> defines the refund window per category.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  BOOKINGS {
+    uuid id PK
+    uuid user_id FK "-> users, domain 1"
+    uuid session_id FK "-> sessions, domain 4"
+    uuid pass_id FK "-> passes, domain 5"
+    string booking_reference
+    string status
+    decimal total_amount
+  }
+  TICKETS {
+    uuid id PK
+    uuid booking_id FK
+    uuid session_id FK "-> sessions, domain 4"
+    uuid ticket_category_id FK "-> domain 5"
+    uuid assigned_user_id FK "-> users, domain 1"
+    uuid seat_id FK "-> venue_seats, domain 3"
+    string status
+    decimal price_paid
+  }
+  TICKET_TRANSFERS {
+    uuid id PK
+    uuid ticket_id FK
+    uuid from_user_id FK "-> users, domain 1"
+    uuid to_user_id FK "-> users, domain 1"
+    string transfer_status
+    decimal transfer_price
+    uuid approved_by_member_id FK "-> org_members, domain 2"
+  }
+  REFUND_POLICIES {
+    uuid id PK
+    uuid ticket_category_id FK "-> domain 5"
+    int hours_before_event
+    decimal refund_percentage
+  }
+
+  BOOKINGS ||--o{ TICKETS : contains
+  TICKETS ||--o{ TICKET_TRANSFERS : "transferred via"
+    </pre></div>
+  </section>
+
+  <section id="entry">
+    <h2>8. Reverse-QR gate entry verification</h2>
+    <div class="desc">Ticket-holder scans the gate's rotating on-screen code. <code>uq_entry_attempt_ticket_token</code> blocks replay of the same ticket+token; a partial unique index allows only one <code>approved</code> attempt per ticket.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  ENTRY_ATTEMPTS {
+    uuid id PK
+    uuid ticket_id FK "-> tickets, domain 7"
+    uuid user_id FK "-> users, domain 1"
+    uuid gate_id FK "-> gates, domain 3"
+    uuid gate_qr_token_id FK "-> domain 3"
+    uuid device_id FK "-> user_devices, domain 1"
+    string server_decision
+    uuid id_checked_by_member_id FK "-> org_members, domain 2"
+  }
+  GATE_MANUAL_OVERRIDES {
+    uuid id PK
+    uuid ticket_id FK "-> tickets, domain 7"
+    uuid gate_id FK "-> gates, domain 3"
+    uuid organization_member_id FK "-> domain 2"
+    string reason
+  }
+    </pre></div>
+  </section>
+
+  <section id="payments">
+    <h2>9. Payments, refunds &amp; payouts</h2>
+    <div class="desc">One payment per booking (idempotent on gateway txn id); refunds are a separate ledger to represent partials/retries. Payouts settle organization earnings to a bank account.</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  BOOKINGS ||--o{ PAYMENTS : "paid via"
+  PAYMENTS ||--o{ REFUNDS : "refunded via"
+  BOOKINGS ||--o{ REFUNDS : "refunded on"
+  ORGANIZATIONS ||--o{ PAYOUTS : receives
+  ORGANIZATION_BANK_ACCOUNTS ||--o{ PAYOUTS : "settled to"
+
+  PAYMENTS {
+    uuid id PK
+    uuid booking_id FK "-> bookings, domain 7"
+    decimal amount
+    string status
+    string gateway_txn_id
+  }
+  REFUNDS {
+    uuid id PK
+    uuid booking_id FK
+    uuid payment_id FK
+    decimal amount
+    uuid initiated_by FK "-> users, domain 1"
+    string status
+  }
+  PAYOUTS {
+    uuid id PK
+    uuid organization_id FK "-> domain 2"
+    uuid bank_account_id FK "-> domain 2"
+    decimal gross_amount
+    decimal platform_fee
+    decimal net_amount
+    string status
+  }
+  BOOKINGS { uuid id PK }
+  ORGANIZATIONS { uuid id PK }
+  ORGANIZATION_BANK_ACCOUNTS { uuid id PK }
+    </pre></div>
+  </section>
+
+  <section id="support">
+    <h2>10. Notifications &amp; audit log</h2>
+    <div class="desc">Cross-cutting support tables. Both reference <code>users</code> (domain 1); <code>audit_logs</code> also references <code>organizations</code> (domain 2).</div>
+    <div class="diagram-card"><pre class="mermaid">
+erDiagram
+  NOTIFICATIONS {
+    uuid id PK
+    uuid user_id FK "-> users, domain 1"
+    string type
+    string channel
+    string status
+  }
+  AUDIT_LOGS {
+    uuid id PK
+    uuid actor_user_id FK "-> users, domain 1"
+    uuid organization_id FK "-> organizations, domain 2"
+    string action
+    string entity_type
+    uuid entity_id
+  }
+    </pre></div>
+  </section>
+
+  <footer>
+    Generated from <code>schema_final_consolidated.sql</code> (PostgreSQL, 47 tables). Diagrams grouped by functional domain for readability — see the description under each for the foreign keys that link it to other domains.
+  </footer>
+</div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  securityLevel: 'loose',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    background: dark ? '#262624' : '#f7f7f5',
+    primaryColor: dark ? '#33332f' : '#eceae2',
+    primaryTextColor: dark ? '#ece9e0' : '#2c2c2a',
+    primaryBorderColor: dark ? '#5f5e5a' : '#b4b2a9',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+</script>
+</body>
+</html>
