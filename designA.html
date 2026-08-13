@@ -63,7 +63,7 @@ header{
   font-family:var(--display);
   font-size:21px;
   font-weight:600;
-  color:var(--claude-deep);
+  color:#000;
   letter-spacing:-.3px;
 }
 
@@ -75,6 +75,7 @@ header{
   color:var(--muted);
 }
 
+.nav-links{ display:flex; align-items:center; gap:32px; }
 .nav a{ transition:color .15s; }
 .nav a:hover{ color:var(--ink); }
 
@@ -103,7 +104,7 @@ header{
   justify-content:center;
   align-items:center;
   text-align:center;
-  background:var(--surface);
+  background:#fff;
 }
 
 .hero-content{
@@ -112,27 +113,6 @@ header{
   max-width:720px;
   padding:120px 20px 40px;
 }
-
-.eyebrow{
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  font-size:13px;
-  font-weight:500;
-  color:var(--muted);
-  background:var(--white);
-  border:1px solid var(--line);
-  padding:7px 16px;
-  border-radius:999px;
-  margin-bottom:24px;
-}
-
-.dotrow{ display:inline-flex; gap:3px; }
-.dotrow span{ width:6px; height:6px; border-radius:50%; }
-.dotrow span:nth-child(1){ background:var(--g-blue); }
-.dotrow span:nth-child(2){ background:var(--g-red); }
-.dotrow span:nth-child(3){ background:var(--g-yellow); }
-.dotrow span:nth-child(4){ background:var(--g-green); }
 
 .hero h1{
   font-family:var(--display);
@@ -253,16 +233,18 @@ main{
   flex-direction:column;
   justify-content:space-between;
   cursor:pointer;
-  transition:.15s;
+  transition:background .15s;
 }
 
-.category:hover{
-  transform:translateY(-2px);
-  box-shadow:0 6px 16px rgba(32,33,36,.1);
-  border-color:transparent;
+.category:hover{ background:var(--surface); }
+
+.category-icon{
+  width:26px;
+  height:26px;
+  color:var(--cat-accent, var(--g-blue));
 }
 
-.category-dot{ width:10px; height:10px; border-radius:50%; background:var(--cat-accent, var(--g-blue)); }
+.category-icon svg{ width:100%; height:100%; display:block; }
 
 .category-name{
   font-size:16px;
@@ -288,7 +270,12 @@ main{
   font-weight:600;
   cursor:pointer;
   color:var(--claude);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
 }
+
+.location-button svg{ width:16px; height:16px; flex-shrink:0; }
 
 .location-wrapper{ position:relative; display:inline-block; }
 
@@ -297,7 +284,7 @@ main{
   position:absolute;
   left:0;
   top:44px;
-  width:680px;
+  width:420px;
   background:var(--white);
   color:var(--ink);
   border-radius:14px;
@@ -305,6 +292,7 @@ main{
   box-shadow:0 10px 30px rgba(32,33,36,.18);
   padding:20px;
   z-index:20;
+  font-weight:400;
 }
 
 .location-menu.active{ display:block; }
@@ -322,16 +310,13 @@ main{
 .regions span{ white-space:nowrap; }
 
 .regions span:first-child{
-  background:var(--g-blue-tint);
-  padding:7px 13px;
-  border-radius:8px;
-  color:var(--g-blue);
+  color:var(--muted);
   font-weight:500;
 }
 
 .cities{
   display:grid;
-  grid-template-columns:repeat(3, 1fr);
+  grid-template-columns:repeat(4, 1fr);
   gap:4px;
   font-size:14px;
 }
@@ -356,10 +341,10 @@ main{
   overflow:hidden;
   display:flex;
   flex-direction:column;
-  transition:.15s;
+  transition:background .15s;
 }
 
-.event-card:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(32,33,36,.12); border-color:transparent; }
+.event-card:hover{ background:var(--surface); }
 
 .event-image{
   width:100%;
@@ -464,35 +449,55 @@ footer{
   .floating-card{ opacity:.5; }
   .events{ grid-template-columns:repeat(2, 1fr); }
   .categories{ grid-template-columns:repeat(2, 1fr); }
-  .location-menu{ width:100%; max-width:520px; }
+  .location-menu{ width:100%; max-width:420px; }
+  .cities{ grid-template-columns:repeat(3, 1fr); }
 }
 
 @media (max-width:700px){
-  header{ padding:18px 20px; }
-  .nav{ display:none; }
-  .hero{ min-height:560px; }
-  .hero h1{ font-size:40px; letter-spacing:-.5px; }
-  .hero p{ font-size:15px; }
-  .floating-card{ width:80px; }
-  .card-1{ left:2%; }
-  .card-2{ left:4%; top:14%; }
-  .card-3{ right:4%; top:11%; }
-  .card-4{ right:2%; }
-  main{ padding:56px 20px; }
+  header{ padding:16px 20px; }
+  .nav-links{ display:none; }
+  .signin{ padding:9px 18px; font-size:13px; }
+  .hero{ min-height:520px; }
+  .hero-content{ padding:100px 20px 32px; }
+  .hero h1{ font-size:36px; letter-spacing:-.5px; }
+  .hero p{ font-size:14.5px; }
+  .hero-buttons{ margin-top:26px; }
+  .floating-card{ width:64px; padding:4px; }
+  .card-1{ left:2%; top:44%; }
+  .card-2{ left:4%; top:16%; }
+  .card-3{ right:4%; top:13%; }
+  .card-4{ right:2%; top:42%; }
+  main{ padding:48px 20px; }
+  .section{ margin-bottom:56px; }
+  .section-title{ font-size:20px; margin-bottom:20px; }
   .categories{ grid-template-columns:1fr 1fr; gap:10px; }
-  .category{ min-height:96px; padding:16px; }
-  .events{ grid-template-columns:repeat(2, 1fr); gap:12px; }
+  .category{ min-height:92px; padding:14px; }
+  .category-name{ font-size:14.5px; }
+  .events{ grid-template-columns:repeat(2, 1fr); gap:10px; }
   .location-menu{ width:calc(100vw - 40px); left:-20px; }
   .cities{ grid-template-columns:repeat(2, 1fr); }
   .regions{ overflow-x:auto; white-space:nowrap; }
-  .footer-top{ flex-direction:column; align-items:flex-start; }
-  .footer-links{ flex-wrap:wrap; }
+  .upcoming-card{ padding:14px 16px; gap:12px; }
+  .footer-top{ flex-direction:column; align-items:flex-start; gap:16px; }
+  .footer-links{ flex-wrap:wrap; gap:16px; }
+  footer{ padding:32px 20px; }
 }
 
-@media (max-width:450px){
-  .event-title{ font-size:14.5px; }
-  .event-date{ font-size:12px; }
-  .hero-buttons{ flex-direction:column; width:190px; margin-left:auto; margin-right:auto; }
+@media (max-width:480px){
+  .floating-card{ display:none; }
+  .hero-content{ padding:72px 16px 28px; }
+  .hero h1{ font-size:32px; }
+  .events{ grid-template-columns:1fr; }
+  .event-title{ font-size:15px; }
+  .event-date{ font-size:12.5px; }
+  .categories{ grid-template-columns:1fr 1fr; }
+  .cities{ grid-template-columns:1fr; }
+  .location-menu{ width:200px; left:0; padding:14px; }
+  .city{ text-align:center; }
+  .hero-buttons{ flex-direction:column; width:100%; gap:10px; }
+  .btn{ width:100%; }
+  .upcoming-title{ font-size:14px; }
+  .upcoming-date{ font-size:12px; }
 }
 
 </style>
@@ -502,20 +507,18 @@ footer{
 <header>
   <div class="logo">SortMyEntries</div>
   <nav class="nav">
-    <a href="#">Discover</a>
-    <a href="#">Create Event</a>
-    <a href="#">Pricing</a>
-    <a href="#">Help</a>
+    <div class="nav-links">
+      <a href="#">Discover</a>
+      <a href="#">Create Event</a>
+      <a href="#">Pricing</a>
+      <a href="#">Help</a>
+    </div>
     <button class="signin">Sign In</button>
   </nav>
 </header>
 
 <section class="hero">
   <div class="hero-content">
-    <div class="eyebrow">
-      <span class="dotrow"><span></span><span></span><span></span><span></span></span>
-      SortMyEntries — Curated Access
-    </div>
     <h1>Not every event<br>gets <em>in.</em></h1>
     <p>We review what goes on the list, so what's on it is worth your evening — concerts, launches, pop-ups and rooms worth being in.</p>
     <div class="hero-buttons">
@@ -543,14 +546,38 @@ footer{
   <section class="section">
     <h2 class="section-title">Browse by category</h2>
     <div class="categories">
-      <div class="category tech"><div class="category-dot"></div><div class="category-name">Tech</div></div>
-      <div class="category food"><div class="category-dot"></div><div class="category-name">Food & Drink</div></div>
-      <div class="category ai"><div class="category-dot"></div><div class="category-name">AI</div></div>
-      <div class="category arts"><div class="category-dot"></div><div class="category-name">Arts & Culture</div></div>
-      <div class="category climate"><div class="category-dot"></div><div class="category-name">Climate</div></div>
-      <div class="category fitness"><div class="category-dot"></div><div class="category-name">Fitness</div></div>
-      <div class="category wellness"><div class="category-dot"></div><div class="category-name">Wellness</div></div>
-      <div class="category crypto"><div class="category-dot"></div><div class="category-name">Crypto</div></div>
+      <div class="category tech">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg></div>
+        <div class="category-name">Tech</div>
+      </div>
+      <div class="category food">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v6a2 2 0 0 0 2 2v10M8 3v8M10 3v8M17 3c-2 1-2 4-2 6a2 2 0 0 0 2 2v10"/></svg></div>
+        <div class="category-name">Food & Drink</div>
+      </div>
+      <div class="category ai">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.8L12 16l-1.8-4.5L5 9.7l5.2-1.8z"/><path d="M18.5 15l.9 2.4 2.6.9-2.6.9-.9 2.4-.9-2.4-2.6-.9 2.6-.9z"/></svg></div>
+        <div class="category-name">AI</div>
+      </div>
+      <div class="category arts">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 8 0 1 0 0 16c1 0 1.5-.6 1.5-1.4 0-.4-.2-.7-.4-1-.2-.3-.4-.6-.4-1 0-.8.6-1.4 1.4-1.4H16a4 4 0 0 0 4-4c0-4-3.6-7.2-8-7.2Z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="8" r="1"/><circle cx="15" cy="9" r="1"/></svg></div>
+        <div class="category-name">Arts & Culture</div>
+      </div>
+      <div class="category climate">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12c0 4-3.6 8-8 8-3 0-5-2-5-4.5C7 12 12 12 12 4c4 2 8 5 8 8Z"/></svg></div>
+        <div class="category-name">Climate</div>
+      </div>
+      <div class="category fitness">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></div>
+        <div class="category-name">Fitness</div>
+      </div>
+      <div class="category wellness">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-9.3-9C1.4 8.2 3 5 6.3 5c1.9 0 3.3 1 4.2 2.4C11.4 6 12.8 5 14.7 5 18 5 19.6 8.2 21.3 11 19 15.6 12 20 12 20Z"/></svg></div>
+        <div class="category-name">Wellness</div>
+      </div>
+      <div class="category crypto">
+        <div class="category-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.5h3.6a1.9 1.9 0 0 1 0 3.8H9.5m0 0h4.1a1.9 1.9 0 0 1 0 3.8H9.5"/></svg></div>
+        <div class="category-name">Crypto</div>
+      </div>
     </div>
   </section>
 
@@ -558,37 +585,28 @@ footer{
     <h2 class="section-title location-header">
       On the list in
       <div class="location-wrapper">
-        <button class="location-button" onclick="toggleLocation()" id="currentLocation">Mumbai</button>
+        <button class="location-button" onclick="toggleLocation()">
+          <span id="currentLocation">Mumbai</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+        </button>
         <div class="location-menu" id="locationMenu">
           <div class="regions">
-            <span>Asia & Pacific</span>
-            <span>Africa</span>
-            <span>Europe</span>
-            <span>North America</span>
-            <span>South America</span>
+            <span>India</span>
           </div>
           <div class="cities">
-            <div class="city">Auckland</div>
-            <div class="city">Bangkok</div>
+            <div class="city">Ahmedabad</div>
             <div class="city">Bengaluru</div>
-            <div class="city">Brisbane</div>
-            <div class="city">Dubai</div>
-            <div class="city">Ho Chi Minh City</div>
-            <div class="city">Hong Kong</div>
-            <div class="city">Honolulu</div>
-            <div class="city">Jakarta</div>
-            <div class="city">Kuala Lumpur</div>
-            <div class="city">Manila</div>
-            <div class="city">Melbourne</div>
+            <div class="city">Chandigarh</div>
+            <div class="city">Chennai</div>
+            <div class="city">Goa</div>
+            <div class="city">Gurugram</div>
+            <div class="city">Hyderabad</div>
+            <div class="city">Jaipur</div>
+            <div class="city">Kolkata</div>
             <div class="city selected">Mumbai</div>
             <div class="city">New Delhi</div>
-            <div class="city">Osaka</div>
-            <div class="city">Seoul</div>
-            <div class="city">Singapore</div>
-            <div class="city">Sydney</div>
-            <div class="city">Taipei</div>
-            <div class="city">Tel Aviv-Yafo</div>
-            <div class="city">Tokyo</div>
+            <div class="city">Noida</div>
+            <div class="city">Pune</div>
           </div>
         </div>
       </div>
